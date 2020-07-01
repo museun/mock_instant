@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["museun <museun@outlook.com>"]
 edition = "2018"
 license = "0BSD"
+readme = "README.md"
 repository = "https://github.com/museun/mock_instant"
 
 [dependencies]

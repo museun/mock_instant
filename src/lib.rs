@@ -7,7 +7,7 @@ It provides a replacement `std::time::Instant` that uses a deterministic thread-
 You can swap out the `std::time::Instant` with this one by doing something similar to:
 ```
 #[cfg(feature = "test-time")]
-use Mock_instant::Instant;
+use mock_instant::Instant;
 
 #[cfg(not(feature = "test-time"))]
 use std::time::Instant;
