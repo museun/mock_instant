@@ -5,6 +5,9 @@ authors = ["museun <museun@outlook.com>"]
 edition = "2018"
 license = "0BSD"
 readme = "README.md"
+keywords = ["mock", "test", "time", "instant"]
+description = "a simple way to mock an std::time::Instant"
+documentation = "https://docs.rs/mock_instant"
 repository = "https://github.com/museun/mock_instant"
 
 [dependencies]
