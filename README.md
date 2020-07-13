@@ -2,7 +2,7 @@
 
 ## mock_instant
 
-This crate allows you to test Instant/Duration code, deterministically per thread.const
+This crate allows you to test Instant/Duration code, deterministically per thread.
 
 It provides a replacement `std::time::Instant` that uses a deterministic thread-local 'clock'
 
