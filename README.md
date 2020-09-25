@@ -2,7 +2,12 @@
 
 ## mock_instant
 
-This crate allows you to test Instant/Duration code, deterministically per thread.const
+This crate allows you to test Instant/Duration code, deterministically ***per thread***.
+
+If cross-thread determinism is required, enable the `sync` feature:
+```toml
+mock_instant = { version = "0.2", features = ["sync"] }
+```
 
 It provides a replacement `std::time::Instant` that uses a deterministic thread-local 'clock'
 

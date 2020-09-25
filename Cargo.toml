@@ -1,6 +1,6 @@
 [package]
 name = "mock_instant"
-version = "0.1.1"
+version = "0.2"
 authors = ["museun <museun@outlook.com>"]
 edition = "2018"
 license = "0BSD"
@@ -10,4 +10,9 @@ description = "a simple way to mock an std::time::Instant"
 documentation = "https://docs.rs/mock_instant"
 repository = "https://github.com/museun/mock_instant"
 
+[features]
+default = []
+sync = ["once_cell"]
+
 [dependencies]
+once_cell = { version = "1.4", optional = true }
