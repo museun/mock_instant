@@ -1,6 +1,11 @@
 /*! # mock_instant
 
-This crate allows you to test Instant/Duration code, deterministically per thread.const
+This crate allows you to test Instant/Duration code, deterministically ***per thread***.
+
+If cross-thread determinism is required, enable the `sync` feature:
+```toml
+mock_instant = { version = "0.2", features = ["sync"] }
+```
 
 It provides a replacement `std::time::Instant` that uses a deterministic thread-local 'clock'
 
@@ -27,11 +32,42 @@ assert_eq!(now.elapsed(), Duration::from_secs(17));
 ```
 */
 
-use std::cell::RefCell;
 use std::time::Duration;
 
-thread_local! {
-    static TIME: RefCell<Duration> = RefCell::new(Duration::default());
+#[cfg(feature = "sync")]
+mod reference {
+    use once_cell::sync::OnceCell;
+    use std::{sync::Mutex, time::Duration};
+
+    pub static TIME: OnceCell<Mutex<Duration>> = OnceCell::new();
+
+    pub fn with_time(d: impl Fn(&mut Duration)) {
+        let t = TIME.get_or_init(Mutex::default);
+        let mut t = t.lock().unwrap();
+        d(&mut t);
+    }
+
+    pub fn get_time() -> Duration {
+        *TIME.get_or_init(Mutex::default).lock().unwrap()
+    }
+}
+
+#[cfg(not(feature = "sync"))]
+mod reference {
+    use std::cell::RefCell;
+    use std::time::Duration;
+
+    thread_local! {
+        pub static TIME: RefCell<Duration> = RefCell::new(Duration::default());
+    }
+
+    pub fn with_time(d: impl Fn(&mut Duration)) {
+        TIME.with(|t| d(&mut *t.borrow_mut()))
+    }
+
+    pub fn get_time() -> Duration {
+        TIME.with(|t| *t.borrow())
+    }
 }
 
 /// A Mock clock
@@ -51,17 +87,17 @@ impl std::fmt::Debug for MockClock {
 impl MockClock {
     /// Set the internal clock to this 'Duration'
     pub fn set_time(time: Duration) {
-        TIME.with(|t| *t.borrow_mut() = time);
+        reference::with_time(|t| *t = time);
     }
 
     /// Advance the internal clock by this 'Duration'
     pub fn advance(time: Duration) {
-        TIME.with(|t| *t.borrow_mut() += time);
+        reference::with_time(|t| *t += time);
     }
 
     /// Get the current duration
     pub fn time() -> Duration {
-        TIME.with(|t| *t.borrow())
+        reference::get_time()
     }
 }
 
