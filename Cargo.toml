@@ -1,6 +1,6 @@
 [package]
 name = "mock_instant"
-version = "0.2"
+version = "0.2.0"
 authors = ["museun <museun@outlook.com>"]
 edition = "2018"
 license = "0BSD"

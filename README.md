@@ -2,9 +2,10 @@
 
 ## mock_instant
 
-This crate allows you to test Instant/Duration code, deterministically ***per thread***.
+This crate allows you to test Instant/Duration code, deterministically **_per thread_**.
 
 If cross-thread determinism is required, enable the `sync` feature:
+
 ```toml
 mock_instant = { version = "0.2", features = ["sync"] }
 ```
@@ -12,6 +13,7 @@ mock_instant = { version = "0.2", features = ["sync"] }
 It provides a replacement `std::time::Instant` that uses a deterministic thread-local 'clock'
 
 You can swap out the `std::time::Instant` with this one by doing something similar to:
+
 ```rust
 #[cfg(test)]
 use mock_instant::Instant;
@@ -21,6 +23,7 @@ use std::time::Instant;
 ```
 
 ## Example
+
 ```rust
 use std::time::Duration;
 
