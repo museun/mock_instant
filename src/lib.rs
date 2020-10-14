@@ -169,7 +169,7 @@ impl std::ops::Sub for Instant {
 impl std::ops::Sub<Duration> for Instant {
     type Output = Instant;
     fn sub(self, rhs: Duration) -> Self::Output {
-        self.checked_add(rhs)
+        self.checked_sub(rhs)
             .expect("overflow when substracting duration from instant")
     }
 }
