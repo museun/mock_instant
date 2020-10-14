@@ -268,6 +268,12 @@ mod tests {
             Instant(Duration::from_millis(41))
         );
 
+        // now - 1 = diff - 1
+        assert_eq!(
+            Instant::now() - Duration::from_millis(1),
+            Instant(Duration::from_millis(41))
+        );
+
         // now - diff + 1 = none
         assert!(Instant::now()
             .checked_sub(Duration::from_millis(43))
