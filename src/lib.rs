@@ -169,7 +169,7 @@ impl std::ops::Sub for Instant {
 impl std::ops::Sub<Duration> for Instant {
     type Output = Instant;
     fn sub(self, rhs: Duration) -> Self::Output {
-        self.checked_add(rhs)
+        self.checked_sub(rhs)
             .expect("overflow when substracting duration from instant")
     }
 }
@@ -265,6 +265,12 @@ mod tests {
             Instant::now()
                 .checked_sub(Duration::from_millis(1))
                 .unwrap(),
+            Instant(Duration::from_millis(41))
+        );
+
+        // now - 1 = diff - 1
+        assert_eq!(
+            Instant::now() - Duration::from_millis(1),
             Instant(Duration::from_millis(41))
         );
 
