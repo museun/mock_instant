@@ -189,8 +189,10 @@ impl std::error::Error for SystemTimeError {
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct SystemTime(Duration);
 
+pub const UNIX_EPOCH: SystemTime = SystemTime(Duration::from_secs(0));
+
 impl SystemTime {
-    pub const UNIX_EPOCH: SystemTime = SystemTime(Duration::from_secs(0));
+    pub const UNIX_EPOCH: SystemTime = UNIX_EPOCH;
 
     pub fn now() -> Self {
         Self(MockClock::system_time())
