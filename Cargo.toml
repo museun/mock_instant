@@ -15,4 +15,4 @@ default = []
 sync = ["once_cell"]
 
 [dependencies]
-once_cell = { version = "1.4", optional = true }
+once_cell = { version = "1.17", optional = true }
