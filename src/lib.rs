@@ -74,7 +74,7 @@ mod reference {
         *TIME.get_or_init(Mutex::default).lock().unwrap()
     }
 
-    pub fn get_time() -> Duration {
+    pub fn with_system_time() -> Duration {
         let t = SYSTEM_TIME.get_or_init(Mutex::default);
         let mut t = t.lock().unwrap();
         d(&mut t);
