@@ -9,6 +9,10 @@ mock_instant = { version = "0.2", features = ["sync"] }
 
 It provides a replacement `std::time::Instant` and `std::time::SystemTime` that uses a deterministic thread-local 'clock'
 
+**NOTE:** if this is enabled then all tests will use the same singleton `MockClock` source
+
+---
+
 You can swap out the `std::time::Instant` with this one by doing something similar to:
 ```rust
 #[cfg(test)]
