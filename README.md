@@ -59,4 +59,10 @@ MockClock::advance_system_time(Duration::from_secs(2));
 assert_eq!(now.elapsed().unwrap(), Duration::from_secs(17));
 ```
 
+# Caveats
+
+If the `sync` feature is enabled then all tests using this crate will use a global singleton clock.
+
+see <https://github.com/museun/mock_instant/issues/6>
+
 License: 0BSD
