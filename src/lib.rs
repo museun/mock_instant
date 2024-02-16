@@ -255,6 +255,22 @@ impl std::ops::SubAssign<Duration> for SystemTime {
     }
 }
 
+impl From<std::time::SystemTime> for SystemTime {
+    fn from(value: std::time::SystemTime) -> Self {
+        Self(
+            value
+                .duration_since(std::time::SystemTime::UNIX_EPOCH)
+                .expect("std::time::SystemTime is before UNIX_EPOCH"),
+        )
+    }
+}
+
+impl From<SystemTime> for std::time::SystemTime {
+    fn from(value: SystemTime) -> Self {
+        Self::UNIX_EPOCH + value.0
+    }
+}
+
 /// A simple deterministic Instant wrapped around a modifiable Duration
 ///
 /// This used a thread-local state as the 'wall clock' that is configurable via
@@ -421,6 +437,15 @@ mod tests {
         assert!(SystemTime::now()
             .checked_sub(Duration::from_millis(43))
             .is_none());
+    }
+
+    #[test]
+    fn system_time_from_std_roundtrip() {
+        let std_now = std::time::SystemTime::now();
+        let mock_now: SystemTime = std_now.into();
+        assert!(mock_now.0 > Duration::from_secs(1708041600)); // Friday 16 February 2024 00:00:00 GMT
+        let roundtrip_now: std::time::SystemTime = mock_now.into();
+        assert_eq!(std_now, roundtrip_now)
     }
 
     #[test]
