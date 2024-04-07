@@ -1,6 +1,6 @@
 /*! # mock_instant
 
-**_NOTE_** As of version 0.3, the thread-local clock has been removed. The clock will always be thread-safe.
+**_NOTE_** As of version 0.4, the thread-local clock has been removed. The clock will always be thread-safe.
 
 To ensure unsurprising behavior, **reset** the clock _before_ each test (if that behavior is applicable.)
 
