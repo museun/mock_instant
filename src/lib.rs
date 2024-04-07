@@ -22,6 +22,17 @@ use mock_instant::Instant;
 use std::time::Instant;
 ```
 
+
+Or a `std::time::SystemTime` with this one by doing something similar to:
+
+```rust
+#[cfg(test)]
+use mock_instant::SystemTime;
+
+#[cfg(not(test))]
+use std::time::SystemTime;
+```
+
 ## Example
 
 ```rust
