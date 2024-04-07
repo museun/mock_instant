@@ -24,7 +24,7 @@ use std::time::Instant;
 
 or for a `std::time::SystemTime`
 
-```
+```rust
 #[cfg(test)]
 use mock_instant::{SystemTime, SystemTimeError};
 
@@ -35,8 +35,8 @@ use std::time::{SystemTime, SystemTimeError};
 ## Example
 
 ```rust
-# use mock_instant::MockClock;
-# use mock_instant::Instant;
+use mock_instant::MockClock;
+use mock_instant::Instant;
 use std::time::Duration;
 
 let now = Instant::now();
