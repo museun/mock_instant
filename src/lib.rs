@@ -1,19 +1,19 @@
 /*! # mock_instant
 
-This crate allows you to test Instant/Duration code, deterministically ***per thread***.
+**_NOTE_** As of version 0.3, the thread-local clock has been removed. The clock will always be thread-safe.
 
-If cross-thread determinism is required, enable the `sync` feature:
-```toml
-mock_instant = { version = "0.2", features = ["sync"] }
-```
-
-It provides a replacement `std::time::Instant` and `std::time::SystemTime` that uses a deterministic thread-local 'clock'
-
-**NOTE:** if this is enabled then all tests will use the same singleton `MockClock` source
+To ensure unsurprising behavior, **reset** the clock _before_ each test (if that behavior is applicable.)
 
 ---
 
+This crate allows you to test `Instant`/`Duration`/`SystemTime` code, deterministically.
+
+_This uses a static mutex to have a thread-aware clock._
+
+It provides a replacement `std::time::Instant` that uses a deterministic 'clock'
+
 You can swap out the `std::time::Instant` with this one by doing something similar to:
+
 ```rust
 #[cfg(test)]
 use mock_instant::Instant;
@@ -31,9 +31,22 @@ use mock_instant::{SystemTime, SystemTimeError};
 use std::time::{SystemTime, SystemTimeError};
 ```
 
-# Example
+
+Or a `std::time::SystemTime` with this one by doing something similar to:
+
 ```rust
-# use mock_instant::{MockClock, Instant};
+#[cfg(test)]
+use mock_instant::SystemTime;
+
+#[cfg(not(test))]
+use std::time::SystemTime;
+```
+
+## Example
+
+```rust
+# use mock_instant::MockClock;
+# use mock_instant::Instant;
 use std::time::Duration;
 
 let now = Instant::now();
@@ -44,76 +57,63 @@ MockClock::advance(Duration::from_secs(2));
 assert_eq!(now.elapsed(), Duration::from_secs(17));
 ```
 
-# Mocking a SystemTime
-```rust
-# use mock_instant::{MockClock, SystemTime};
-use std::time::Duration;
+## API:
 
-let now = SystemTime::now();
-MockClock::advance_system_time(Duration::from_secs(15));
-MockClock::advance_system_time(Duration::from_secs(2));
+```rust,compile_fail
+// Overrides the current time to this `Duration`
+MockClick::set_time(time: Duration)
 
-// its been '17' seconds
-assert_eq!(now.elapsed().unwrap(), Duration::from_secs(17));
+// Advance the current time by this `Duration`
+MockClick::advance(time: Duration)
+
+// Get the current time
+MockClick::time() -> Duration
+
+// Overrides the current `SystemTime` to this duration
+MockClick::set_system_time(time: Duration)
+
+// Advance the current `SystemTime` by this duration
+MockClick::sdvance_system_time(time: Duration)
+
+// Get the current `SystemTime`
+MockClick::system_time() -> Duration
 ```
+
+## Usage:
+
+**_NOTE_** The clock starts at `Duration::ZERO`
+
+In your tests, you can use `MockClock::set_time(Duration::ZERO)` to reset the clock back to 0. Or, you can set it to some sentinel time value.
+
+Then, before you check your time-based logic, you can advance the clock by some `Duration` (it'll freeze the time to that duration)
+
+You can also get the current frozen time with `MockClock::time`
+
+`SystemTime` is also mockable with a similar API.
+
 */
 
-use std::time::Duration;
+use std::{sync::Mutex, time::Duration};
 
-#[cfg(feature = "sync")]
-mod reference {
-    use once_cell::sync::OnceCell;
-    use std::{sync::Mutex, time::Duration};
+pub(crate) static TIME: Mutex<Duration> = Mutex::new(Duration::ZERO);
+pub(crate) static SYSTEM_TIME: Mutex<Duration> = Mutex::new(Duration::ZERO);
 
-    pub static TIME: OnceCell<Mutex<Duration>> = OnceCell::new();
-    pub static SYSTEM_TIME: OnceCell<Mutex<Duration>> = OnceCell::new();
-
-    pub fn with_time(d: impl Fn(&mut Duration)) {
-        let t = TIME.get_or_init(Mutex::default);
-        let mut t = t.lock().unwrap();
-        d(&mut t);
-    }
-
-    pub fn get_time() -> Duration {
-        *TIME.get_or_init(Mutex::default).lock().unwrap()
-    }
-
-    pub fn with_system_time(d: impl Fn(&mut Duration)) {
-        let t = SYSTEM_TIME.get_or_init(Mutex::default);
-        let mut t = t.lock().unwrap();
-        d(&mut t);
-    }
-
-    pub fn get_system_time() -> Duration {
-        *SYSTEM_TIME.get_or_init(Mutex::default).lock().unwrap()
-    }
+pub(crate) fn with_time(d: impl Fn(&mut Duration)) {
+    let mut t = TIME.lock().unwrap();
+    d(&mut t);
 }
 
-#[cfg(not(feature = "sync"))]
-mod reference {
-    use std::cell::RefCell;
-    use std::time::Duration;
+pub(crate) fn get_time() -> Duration {
+    *TIME.lock().unwrap()
+}
 
-    thread_local! {
-        pub static TIME: RefCell<Duration> = RefCell::new(Duration::default());
-        pub static SYSTEM_TIME: RefCell<Duration> = RefCell::new(Duration::default());
-    }
+pub(crate) fn with_system_time(d: impl Fn(&mut Duration)) {
+    let mut t = SYSTEM_TIME.lock().unwrap();
+    d(&mut t);
+}
 
-    pub fn with_time(d: impl Fn(&mut Duration)) {
-        TIME.with(|t| d(&mut t.borrow_mut()))
-    }
-
-    pub fn with_system_time(d: impl Fn(&mut Duration)) {
-        SYSTEM_TIME.with(|t| d(&mut t.borrow_mut()))
-    }
-
-    pub fn get_time() -> Duration {
-        TIME.with(|t| *t.borrow())
-    }
-
-    pub fn get_system_time() -> Duration {
-        SYSTEM_TIME.with(|t| *t.borrow())
-    }
+pub(crate) fn get_system_time() -> Duration {
+    *SYSTEM_TIME.lock().unwrap()
 }
 
 /// A Mock clock
@@ -134,32 +134,32 @@ impl std::fmt::Debug for MockClock {
 impl MockClock {
     /// Set the internal Instant clock to this 'Duration'
     pub fn set_time(time: Duration) {
-        reference::with_time(|t| *t = time);
+        self::with_time(|t| *t = time);
     }
 
     /// Advance the internal Instant clock by this 'Duration'
     pub fn advance(time: Duration) {
-        reference::with_time(|t| *t += time);
+        self::with_time(|t| *t += time);
     }
 
     /// Get the current Instant duration
     pub fn time() -> Duration {
-        reference::get_time()
+        self::get_time()
     }
 
     /// Set the internal SystemTime clock to this 'Duration'
     pub fn set_system_time(time: Duration) {
-        reference::with_system_time(|t| *t = time);
+        self::with_system_time(|t| *t = time);
     }
 
     /// Advance the internal SystemTime clock by this 'Duration'
     pub fn advance_system_time(time: Duration) {
-        reference::with_system_time(|t| *t += time);
+        self::with_system_time(|t| *t += time);
     }
 
     /// Get the current SystemTime duration
     pub fn system_time() -> Duration {
-        reference::get_system_time()
+        self::get_system_time()
     }
 }
 
@@ -186,14 +186,15 @@ impl std::error::Error for SystemTimeError {
     }
 }
 
-/// A simple deterministic SystemTime wrapped around a modifiable Duration
+/// A simple deterministic `SystemTime` wrapped around a modifiable `Duration`
 ///
-/// This used a thread-local state as the 'wall clock' that is configurable via
+/// This is used the state for the 'wall clock' that is configurable via
 /// the `MockClock`
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct SystemTime(Duration);
 
-pub const UNIX_EPOCH: SystemTime = SystemTime(Duration::from_secs(0));
+/// A mocked UNIX_EPOCH. This starts at `0` rather than the traditional unix epoch date.
+pub const UNIX_EPOCH: SystemTime = SystemTime(Duration::ZERO);
 
 impl SystemTime {
     pub const UNIX_EPOCH: SystemTime = UNIX_EPOCH;
@@ -359,24 +360,28 @@ mod tests {
     use super::*;
 
     fn reset_time() {
-        MockClock::set_time(Duration::default())
+        MockClock::set_time(Duration::ZERO)
     }
 
     fn reset_system_time() {
-        MockClock::set_system_time(Duration::default())
+        MockClock::set_system_time(Duration::ZERO)
     }
 
     #[test]
     fn set_system_time() {
+        reset_system_time();
+
         MockClock::set_system_time(Duration::from_secs(42));
         assert_eq!(MockClock::system_time(), Duration::from_secs(42));
 
         reset_system_time();
-        assert_eq!(MockClock::system_time(), Duration::default());
+        assert_eq!(MockClock::system_time(), Duration::ZERO);
     }
 
     #[test]
     fn advance_system_time() {
+        reset_system_time();
+
         for i in 0..3 {
             MockClock::advance_system_time(Duration::from_millis(100));
             let time = Duration::from_millis(100 * (i + 1));
@@ -386,6 +391,8 @@ mod tests {
 
     #[test]
     fn system_time() {
+        reset_system_time();
+
         let now = SystemTime::now();
         for i in 0..3 {
             MockClock::advance_system_time(Duration::from_millis(100));
@@ -402,6 +409,8 @@ mod tests {
 
     #[test]
     fn system_time_methods() {
+        reset_system_time();
+
         let system_time = SystemTime::now();
         let interval = Duration::from_millis(42);
         MockClock::advance_system_time(interval);
@@ -454,15 +463,19 @@ mod tests {
 
     #[test]
     fn set_time() {
+        reset_time();
+
         MockClock::set_time(Duration::from_secs(42));
         assert_eq!(MockClock::time(), Duration::from_secs(42));
 
         reset_time();
-        assert_eq!(MockClock::time(), Duration::default());
+        assert_eq!(MockClock::time(), Duration::ZERO);
     }
 
     #[test]
     fn advance() {
+        reset_time();
+
         for i in 0..3 {
             MockClock::advance(Duration::from_millis(100));
             let time = Duration::from_millis(100 * (i + 1));
@@ -472,6 +485,8 @@ mod tests {
 
     #[test]
     fn instant() {
+        reset_time();
+
         let now = Instant::now();
         for i in 0..3 {
             MockClock::advance(Duration::from_millis(100));
@@ -485,6 +500,8 @@ mod tests {
 
     #[test]
     fn methods() {
+        reset_time();
+
         let instant = Instant::now();
         let interval = Duration::from_millis(42);
         MockClock::advance(interval);
