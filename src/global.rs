@@ -53,6 +53,8 @@ mod tests {
 
     #[test]
     fn thread_sharing() {
+        MockClock::set_time(Duration::ZERO);
+
         let start = Instant::now();
 
         std::thread::spawn(move || {
@@ -64,14 +66,16 @@ mod tests {
         .unwrap();
 
         std::thread::spawn(move || {
-            let start = Instant::now();
+            let next = Instant::now();
             MockClock::advance(Duration::from_secs(30));
-            assert_eq!(start.elapsed(), Duration::from_secs(30));
+            assert_eq!(next.elapsed(), Duration::from_secs(30));
         })
         .join()
         .unwrap();
 
         MockClock::advance(Duration::from_secs(10));
-        assert_eq!(start.elapsed(), Duration::from_secs(43));
+        // using seconds because a mutex can be slow on some operating systems
+        // the creation/locking time may be in microseconds so we'll have something like 43.002 != 43
+        assert_eq!(start.elapsed().as_secs(), 43);
     }
 }
