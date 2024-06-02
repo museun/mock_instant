@@ -1,5 +1,6 @@
 /*! # mock_instant
 **_NOTE_** As of version 0.5. MockClock/Instant/SystemTime have been moved to specific modules
+
 **_NOTE_** The modules, `global` and `thread_local` change the behavior across threads. If `global` is used, the clock keeps its state across threads, otherwise if `thread_local` is used, a new *source* is made for each thread
 
 To ensure unsurprising behavior, **reset** the clock _before_ each test (if that behavior is applicable.)
@@ -85,13 +86,15 @@ You can also get the current frozen time with `MockClock::time`
 
 Two modes are provided via modules. The APIs are identical but the `MockClock` source has different behavior in different threads.
 
-- global
+- `mock_instant::global`
+    - `MockClock` will have a new state per thread
+    - `Instant`will have a new state per thread
+    - `SystemTime` will have a new state per thread
 
-when using mock_instant::global `MockClock` `Instant` and `SystemTime` will share its state across threads
-
-- thread_local
-
-when using mock_instant::thread_local `MockClock` `Instant` and `SystemTime` will have a new state per thread
+- `mock_instant::thread_local`
+    - `MockClock` will have a new state per thread
+    - `Instant`will have a new state per thread
+    - `SystemTime` will have a new state per thread
 
 */
 
