@@ -1,8 +1,8 @@
 [package]
 name = "mock_instant"
-version = "0.4.0"
+version = "0.5.0"
 authors = [ "museun <museun@outlook.com>" ]
-edition = "2018"
+edition = "2021"
 license = "0BSD"
 readme = "README.md"
 keywords = [ "mock", "test", "time", "instant" ]
