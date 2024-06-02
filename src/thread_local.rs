@@ -35,7 +35,7 @@ crate::macros::define_instant! {
 crate::macros::define_system_time! {
     MockClock::system_time;
     true;
-    /// This uses a global mutex for its time source
+    /// This uses a thread-local cell for its time source
 }
 
 crate::macros::define_instant_tests!();
