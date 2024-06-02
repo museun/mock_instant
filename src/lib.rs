@@ -31,4 +31,4 @@ impl std::error::Error for SystemTimeError {
 
 pub mod thread_local;
 
-pub mod sync;
+pub mod global;
