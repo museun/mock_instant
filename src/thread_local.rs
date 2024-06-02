@@ -22,16 +22,19 @@ fn get_system_time() -> Duration {
 }
 
 crate::macros::define_mock_clock! {
+    true;
     /// This uses thread-local state for the deterministic clock
 }
 
 crate::macros::define_instant! {
     MockClock::time;
+    true;
     /// This uses a thread-local cell for its time source
 }
 
 crate::macros::define_system_time! {
     MockClock::system_time;
+    true;
     /// This uses a global mutex for its time source
 }
 
@@ -39,7 +42,15 @@ crate::macros::define_instant_tests!();
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
+
+    #[test]
+    fn is_thread_local() {
+        assert!(MockClock::is_thread_local());
+        assert!(Instant::now().is_thread_local());
+        assert!(SystemTime::now().is_thread_local());
+    }
 
     // this checks that threads get their own time source
     #[test]

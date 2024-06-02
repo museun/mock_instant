@@ -1,5 +1,5 @@
 macro_rules! define_mock_clock {
-    ($(#[$outer:meta])*) => {
+    ($thread_local:expr; $(#[$outer:meta])*) => {
         /// A Mock clock
         ///
         $(#[$outer])*
@@ -45,12 +45,17 @@ macro_rules! define_mock_clock {
             pub fn system_time() -> Duration {
                 self::get_system_time()
             }
+
+            /// Is this MockClock thread-local?
+            pub const fn is_thread_local() -> bool {
+                $thread_local
+            }
         }
     };
 }
 
 macro_rules! define_instant {
-    ($now:expr ; $(#[$outer:meta])* ) => {
+    ($now:expr ; $thread_local:expr ; $(#[$outer:meta])* ) => {
         /// A simple deterministic [`std::time::Instant`] wrapped around a modifiable [`std::time::Duration`]
         ///
         $(#[$outer])*
@@ -93,6 +98,11 @@ macro_rules! define_instant {
                     .map(|c| Duration::from_millis(c as _))
                     .map(Self)
             }
+
+            /// Is this Instant thread-local?
+            pub const fn is_thread_local(&self) -> bool {
+                $thread_local
+            }
         }
 
         impl std::ops::Add<Duration> for Instant {
@@ -132,7 +142,7 @@ macro_rules! define_instant {
 }
 
 macro_rules! define_system_time {
-    ($now:expr; $(#[$outer:meta])*) => {
+    ($now:expr; $thread_local:expr; $(#[$outer:meta])*) => {
         /// A simple deterministic [`std::time::SystemTime`] wrapped around a modifiable [`std::time::Duration`]
         ///
         /// The source is the [`MockClock`]
@@ -178,6 +188,11 @@ macro_rules! define_system_time {
                     .checked_sub(duration.as_millis())
                     .map(|c| Duration::from_millis(c as _))
                     .map(Self)
+            }
+
+            /// Is this SystemTime thread-local?
+            pub const fn is_thread_local(&self) -> bool {
+                $thread_local
             }
         }
 
