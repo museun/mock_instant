@@ -29,8 +29,6 @@ use mock_instant::global::{SystemTime, SystemTimeError};
 use std::time::{SystemTime, SystemTimeError};
 ```
 
-e
-
 ```rust
 use mock_instant::global::{MockClock, Instant};
 use std::time::Duration;

@@ -1,6 +1,19 @@
 # mock_instant
 
-**_NOTE_** As of version 0.4, the thread-local clock has been removed. The clock will always be thread-safe.
+**_NOTE_** As of version 0.5. MockClock/Instant/SystemTime have been moved to specific modules
+**_NOTE_** The modules, `global` and `thread_local` change the behavior across threads. If `global` is used, the clock keeps its state across threads, otherwise if `thread_local` is used, a new _source_ is made for each thread
+
+## Migration from older versions
+
+Simply import the types from the correct namespace:
+
+`mock_instant::global`
+
+and
+
+`mock_instant::thread_local`
+
+---
 
 To ensure unsurprising behavior, **reset** the clock _before_ each test (if that behavior is applicable.)
 
@@ -8,15 +21,13 @@ To ensure unsurprising behavior, **reset** the clock _before_ each test (if that
 
 This crate allows you to test `Instant`/`Duration`/`SystemTime` code, deterministically.
 
-_This uses a static mutex to have a thread-aware clock._
-
 It provides a replacement `std::time::Instant` that uses a deterministic 'clock'
 
 You can swap out the `std::time::Instant` with this one by doing something similar to:
 
 ```rust
 #[cfg(test)]
-use mock_instant::Instant;
+use mock_instant::global::Instant;
 
 #[cfg(not(test))]
 use std::time::Instant;
@@ -26,17 +37,14 @@ or for a `std::time::SystemTime`
 
 ```rust
 #[cfg(test)]
-use mock_instant::{SystemTime, SystemTimeError};
+use mock_instant::global::{SystemTime, SystemTimeError};
 
 #[cfg(not(test))]
 use std::time::{SystemTime, SystemTimeError};
 ```
 
-## Example
-
 ```rust
-use mock_instant::MockClock;
-use mock_instant::Instant;
+use mock_instant::global::{MockClock, Instant};
 use std::time::Duration;
 
 let now = Instant::now();
@@ -47,29 +55,34 @@ MockClock::advance(Duration::from_secs(2));
 assert_eq!(now.elapsed(), Duration::from_secs(17));
 ```
 
-## API:
+### API:
 
-```rust
+```rust,compile_fail
 // Overrides the current time to this `Duration`
-MockClick::set_time(time: Duration)
+MockClock::set_time(time: Duration)
 
 // Advance the current time by this `Duration`
-MockClick::advance(time: Duration)
+MockClock::advance(time: Duration)
 
 // Get the current time
-MockClick::time() -> Duration
+MockClock::time() -> Duration
 
 // Overrides the current `SystemTime` to this duration
-MockClick::set_system_time(time: Duration)
+MockClock::set_system_time(time: Duration)
 
 // Advance the current `SystemTime` by this duration
-MockClick::sdvance_system_time(time: Duration)
+MockClock::sdvance_system_time(time: Duration)
 
 // Get the current `SystemTime`
-MockClick::system_time() -> Duration
+MockClock::system_time() -> Duration
+
+// Determine if this MockClock was thread-local: (useful for assertions to ensure the right mode is being used)
+MockClock::is_thread_local() -> bool
+Instant::now().is_thread_local() -> bool
+SystemTime::now().is_thread_local() -> bool
 ```
 
-## Usage:
+### Usage:
 
 **_NOTE_** The clock starts at `Duration::ZERO`
 
@@ -81,6 +94,16 @@ You can also get the current frozen time with `MockClock::time`
 
 `SystemTime` is also mockable with a similar API.
 
----
+### Thread-safety:
+
+Two modes are provided via modules. The APIs are identical but the `MockClock` source has different behavior in different threads.
+
+- global
+
+when using mock_instant::global `MockClock` `Instant` and `SystemTime` will share its state across threads
+
+- thread_local
+
+when using mock_instant::thread_local `MockClock` `Instant` and `SystemTime` will have a new state per thread
 
 License: 0BSD
