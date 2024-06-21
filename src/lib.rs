@@ -58,7 +58,7 @@ MockClock::time() -> Duration
 MockClock::set_system_time(time: Duration)
 
 // Advance the current `SystemTime` by this duration
-MockClock::sdvance_system_time(time: Duration)
+MockClock::advance_system_time(time: Duration)
 
 // Get the current `SystemTime`
 MockClock::system_time() -> Duration
