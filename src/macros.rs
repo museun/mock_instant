@@ -68,7 +68,7 @@ macro_rules! define_instant {
             }
 
             pub fn duration_since(&self, earlier: Self) -> Duration {
-                self.0 - earlier.0
+                self.checked_duration_since(earlier).unwrap_or_default()
             }
 
             pub fn checked_duration_since(&self, earlier: Self) -> Option<Duration> {
@@ -406,12 +406,27 @@ macro_rules! define_instant_tests {
                     interval
                 );
 
-                // 0 since now = none
-                assert!(instant.checked_duration_since(Instant::now()).is_none());
+                // 0 since now = 0
+                assert_eq!(
+                    instant.saturating_duration_since(Instant::now()),
+                    Duration::ZERO
+                );
 
                 // now since 0 = diff
                 assert_eq!(
-                    Instant::now().checked_duration_since(instant).unwrap(),
+                    Instant::now().saturating_duration_since(instant),
+                    interval
+                );
+
+                // 0 since now = 0 - same behavior as saturating_duration_since
+                assert_eq!(
+                    instant.duration_since(Instant::now()),
+                    Duration::ZERO
+                );
+
+                // now since 0 = diff
+                assert_eq!(
+                    Instant::now().duration_since(instant),
                     interval
                 );
 
