@@ -1,12 +1,14 @@
 # mock_instant
 
+## Modules
+
 **_NOTE_** As of version 0.5. MockClock/Instant/SystemTime have been moved to specific modules
 
-**_NOTE_** The modules, `global` and `thread_local` change the behavior across threads. If `global` is used, the clock keeps its state across threads, otherwise if `thread_local` is used, a new _source_ is made for each thread
+**_NOTE_** The modules, `global` and `thread_local` change the behavior across threads. If `global` is used, the clock keeps its state across threads, otherwise if `thread_local` is used, a new _source_ is made for each thread. In most cases, especially when unit testing, `thread_local` will deliver the most expected behavior.
 
 To ensure unsurprising behavior, **reset** the clock _before_ each test (if that behavior is applicable.)
 
----
+## Basics
 
 This crate allows you to test `Instant`/`Duration`/`SystemTime` code, deterministically.
 
@@ -16,7 +18,7 @@ You can swap out the `std::time::Instant` with this one by doing something simil
 
 ```rust
 #[cfg(test)]
-use mock_instant::global::Instant;
+use mock_instant::thread_local::Instant;
 
 #[cfg(not(test))]
 use std::time::Instant;
@@ -26,14 +28,14 @@ or for a `std::time::SystemTime`
 
 ```rust
 #[cfg(test)]
-use mock_instant::global::{SystemTime, SystemTimeError};
+use mock_instant::thread_local::{SystemTime, SystemTimeError};
 
 #[cfg(not(test))]
 use std::time::{SystemTime, SystemTimeError};
 ```
 
 ```rust
-use mock_instant::global::{MockClock, Instant};
+use mock_instant::thread_local::{MockClock, Instant};
 use std::time::Duration;
 
 let now = Instant::now();
@@ -44,7 +46,7 @@ MockClock::advance(Duration::from_secs(2));
 assert_eq!(now.elapsed(), Duration::from_secs(17));
 ```
 
-## API:
+## API
 
 ```rust,compile_fail
 // Overrides the current time to this `Duration`
@@ -71,7 +73,7 @@ Instant::now().is_thread_local() -> bool
 SystemTime::now().is_thread_local() -> bool
 ```
 
-## Usage:
+## Usage
 
 **_NOTE_** The clock starts at `Duration::ZERO`
 
@@ -83,21 +85,30 @@ You can also get the current frozen time with `MockClock::time`
 
 `SystemTime` is also mockable with a similar API.
 
-## Thread-safety:
+## Thread-safety
 
 Two modes are provided via modules. The APIs are identical but the `MockClock` source has different behavior in different threads.
 
-- `mock_instant::global`
+### `mock_instant::thread_local`
 
-  - `MockClock` will have a new state per thread
-  - `Instant`will have a new state per thread
-  - `SystemTime` will have a new state per thread
+- `MockClock` will have an independent state per thread
+- `Instant`will have an independent state per thread
+- `SystemTime` will have an independent state per thread
 
-- `mock_instant::thread_local`
-  - `MockClock` will have a new state per thread
-  - `Instant`will have a new state per thread
-  - `SystemTime` will have a new state per thread
+Using `thread_local` creates a shared clock in each thread of operation within the test application. It is recommended for unit tests and integration tests that test single-threaded behavior.
 
----
+`thread_local` will be the module used in most cases and will create the least surprise.
+
+### `mock_instant::global`
+
+- `MockClock` will have shared state per thread
+- `Instant`will have shared state per thread
+- `SystemTime` will have shared state per thread
+
+Using `global` creates a shared clock across all thread of operation within the test application. It is recommended for integration tests that are specifically testing multi-threaded behavior. Using `global` when not testing multi-threaded behavior is likely to cause inconsistent and confusing errors.
+
+Rust's unit test test-runner executes unit tests in multiple threads (unless directed to run single-threaded). If multiple unit tests are running simultaneouly within the test execution, changes to the `global` clock (resetting or advancing the clock) in one test can created unexpected results in other tests that are executing simultaneously, by changing the clock when the tests assume the clock is not being changed.
+
+## License
 
 License: 0BSD
