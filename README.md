@@ -1,6 +1,7 @@
 # mock_instant
 
 ## Modules
+**_NOTE_** As of verison 0.6, the timer resolution is nanosecond-based, which may be much more accurate than the real thing
 
 **_NOTE_** As of version 0.5. MockClock/Instant/SystemTime have been moved to specific modules
 
