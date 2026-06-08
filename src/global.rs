@@ -38,11 +38,12 @@ crate::macros::define_system_time! {
     /// This uses a global mutex for its time source
 }
 
-crate::macros::define_instant_tests!();
+crate::macros::define_instant_tests!(let _guard = tests::TESTLOCK.lock());
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    pub (super) static TESTLOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn is_thread_local() {
@@ -53,6 +54,7 @@ mod tests {
 
     #[test]
     fn thread_sharing() {
+        let _guard = TESTLOCK.lock();
         MockClock::set_time(Duration::ZERO);
 
         let start = Instant::now();

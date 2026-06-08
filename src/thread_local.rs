@@ -38,7 +38,7 @@ crate::macros::define_system_time! {
     /// This uses a thread-local cell for its time source
 }
 
-crate::macros::define_instant_tests!();
+crate::macros::define_instant_tests!({});
 
 #[cfg(test)]
 mod tests {

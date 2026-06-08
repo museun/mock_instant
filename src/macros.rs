@@ -229,7 +229,7 @@ macro_rules! define_system_time {
 }
 
 macro_rules! define_instant_tests {
-    () => {
+    ($takelock:stmt) => {
         #[cfg(test)]
         mod common {
             use super::*;
@@ -244,6 +244,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn set_system_time() {
+                $takelock
                 reset_system_time();
 
                 MockClock::set_system_time(Duration::from_secs(42));
@@ -255,6 +256,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn advance_system_time() {
+                $takelock
                 reset_system_time();
 
                 for i in 0..3 {
@@ -266,6 +268,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn system_time() {
+                $takelock
                 reset_system_time();
 
                 let now = SystemTime::now();
@@ -284,6 +287,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn system_time_methods() {
+                $takelock
                 reset_system_time();
 
                 let system_time = SystemTime::now();
@@ -329,6 +333,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn system_time_sub_millisecond_precision() {
+                $takelock
                 reset_system_time();
 
                 let t1 = SystemTime::UNIX_EPOCH;
@@ -343,6 +348,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn system_time_from_std_roundtrip() {
+                $takelock
                 let std_now = std::time::SystemTime::now();
                 let mock_now: SystemTime = std_now.into();
                 assert!(mock_now.0 > Duration::from_secs(1708041600)); // Friday 16 February 2024 00:00:00 GMT
@@ -352,6 +358,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn set_time() {
+                $takelock
                 reset_time();
 
                 MockClock::set_time(Duration::from_secs(42));
@@ -363,6 +370,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn advance() {
+                $takelock
                 reset_time();
 
                 for i in 0..3 {
@@ -374,6 +382,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn instant() {
+                $takelock
                 reset_time();
 
                 let now = Instant::now();
@@ -389,6 +398,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn methods() {
+                $takelock
                 reset_time();
 
                 let instant = Instant::now();
@@ -458,6 +468,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn instant_sub_millisecond_precision() {
+                $takelock
                 reset_time();
 
                 let t1 = Instant::now();
