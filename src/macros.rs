@@ -84,19 +84,11 @@ macro_rules! define_instant {
             }
 
             pub fn checked_add(&self, duration: Duration) -> Option<Self> {
-                duration
-                    .as_millis()
-                    .checked_add(self.0.as_millis())
-                    .map(|c| Duration::from_millis(c as _))
-                    .map(Self)
+                self.0.checked_add(duration).map(Self)
             }
 
             pub fn checked_sub(&self, duration: Duration) -> Option<Self> {
-                self.0
-                    .as_millis()
-                    .checked_sub(duration.as_millis())
-                    .map(|c| Duration::from_millis(c as _))
-                    .map(Self)
+                self.0.checked_sub(duration).map(Self)
             }
 
             /// Is this Instant thread-local?
@@ -175,19 +167,11 @@ macro_rules! define_system_time {
             }
 
             pub fn checked_add(&self, duration: Duration) -> Option<SystemTime> {
-                duration
-                    .as_millis()
-                    .checked_add(self.0.as_millis())
-                    .map(|c| Duration::from_millis(c as _))
-                    .map(Self)
+                self.0.checked_add(duration).map(Self)
             }
 
             pub fn checked_sub(&self, duration: Duration) -> Option<SystemTime> {
-                self.0
-                    .as_millis()
-                    .checked_sub(duration.as_millis())
-                    .map(|c| Duration::from_millis(c as _))
-                    .map(Self)
+                self.0.checked_sub(duration).map(Self)
             }
 
             /// Is this SystemTime thread-local?
@@ -245,7 +229,7 @@ macro_rules! define_system_time {
 }
 
 macro_rules! define_instant_tests {
-    () => {
+    ($takelock:stmt) => {
         #[cfg(test)]
         mod common {
             use super::*;
@@ -260,6 +244,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn set_system_time() {
+                $takelock
                 reset_system_time();
 
                 MockClock::set_system_time(Duration::from_secs(42));
@@ -271,6 +256,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn advance_system_time() {
+                $takelock
                 reset_system_time();
 
                 for i in 0..3 {
@@ -282,6 +268,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn system_time() {
+                $takelock
                 reset_system_time();
 
                 let now = SystemTime::now();
@@ -300,6 +287,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn system_time_methods() {
+                $takelock
                 reset_system_time();
 
                 let system_time = SystemTime::now();
@@ -344,7 +332,23 @@ macro_rules! define_instant_tests {
             }
 
             #[test]
+            fn system_time_sub_millisecond_precision() {
+                $takelock
+                reset_system_time();
+
+                let t1 = SystemTime::UNIX_EPOCH;
+                let t2 = SystemTime::UNIX_EPOCH
+                    .checked_add(Duration::from_micros(100))
+                    .unwrap();
+                assert!(t2 > t1, "{t2:?} > {t1:?}");
+
+                let t3 = t2.checked_sub(Duration::from_nanos(1)).unwrap();
+                assert!(t2 > t3, "{t2:?} > {t3:?}");
+            }
+
+            #[test]
             fn system_time_from_std_roundtrip() {
+                $takelock
                 let std_now = std::time::SystemTime::now();
                 let mock_now: SystemTime = std_now.into();
                 assert!(mock_now.0 > Duration::from_secs(1708041600)); // Friday 16 February 2024 00:00:00 GMT
@@ -354,6 +358,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn set_time() {
+                $takelock
                 reset_time();
 
                 MockClock::set_time(Duration::from_secs(42));
@@ -365,6 +370,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn advance() {
+                $takelock
                 reset_time();
 
                 for i in 0..3 {
@@ -376,6 +382,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn instant() {
+                $takelock
                 reset_time();
 
                 let now = Instant::now();
@@ -391,6 +398,7 @@ macro_rules! define_instant_tests {
 
             #[test]
             fn methods() {
+                $takelock
                 reset_time();
 
                 let instant = Instant::now();
@@ -413,22 +421,13 @@ macro_rules! define_instant_tests {
                 );
 
                 // now since 0 = diff
-                assert_eq!(
-                    Instant::now().saturating_duration_since(instant),
-                    interval
-                );
+                assert_eq!(Instant::now().saturating_duration_since(instant), interval);
 
                 // 0 since now = 0 - same behavior as saturating_duration_since
-                assert_eq!(
-                    instant.duration_since(Instant::now()),
-                    Duration::ZERO
-                );
+                assert_eq!(instant.duration_since(Instant::now()), Duration::ZERO);
 
                 // now since 0 = diff
-                assert_eq!(
-                    Instant::now().duration_since(instant),
-                    interval
-                );
+                assert_eq!(Instant::now().duration_since(instant), interval);
 
                 // zero + 1 = 1
                 assert_eq!(
@@ -465,6 +464,25 @@ macro_rules! define_instant_tests {
                 assert!(Instant::now()
                     .checked_sub(Duration::from_millis(43))
                     .is_none());
+            }
+
+            #[test]
+            fn instant_sub_millisecond_precision() {
+                $takelock
+                reset_time();
+
+                let t1 = Instant::now();
+                let t2 = t1.checked_add(Duration::from_micros(100)).unwrap();
+                assert!(t2 > t1, "{t2:?} > {t1:?}");
+
+                let t3 = t2.checked_add(Duration::from_nanos(1)).unwrap();
+                assert!(t3 > t2, "{t3:?} > {t2:?}");
+
+                let t4 = t3.checked_sub(Duration::from_nanos(1)).unwrap();
+                assert_eq!(t4, t2);
+
+                let t5 = t4.checked_sub(Duration::from_micros(100)).unwrap();
+                assert_eq!(t5, t1);
             }
         }
     };

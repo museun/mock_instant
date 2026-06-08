@@ -1,4 +1,6 @@
 /*! # mock_instant
+**_NOTE_** As of verison 0.6, the timer resolution is nanosecond-based, which may be much more accurate than the real thing
+
 **_NOTE_** As of version 0.5. MockClock/Instant/SystemTime have been moved to specific modules
 
 **_NOTE_** The modules, `global` and `thread_local` change the behavior across threads. If `global` is used, the clock keeps its state across threads, otherwise if `thread_local` is used, a new *source* is made for each thread
